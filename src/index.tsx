@@ -33,6 +33,8 @@ interface OTPInputProps {
   onChange: (otp: string) => void;
   /** Callback to be called when pasting content into the component */
   onPaste?: (event: React.ClipboardEvent<HTMLDivElement>) => void;
+  /** Transformer for pasted data */
+  pastedTextTransformer?: (pastedText: string) => string;
   /** Function to render the input */
   renderInput: (inputProps: InputProps, index: number) => React.ReactNode;
   /** Whether the first input should be auto focused */
@@ -58,6 +60,7 @@ const OTPInput = ({
   numInputs = 4,
   onChange,
   onPaste,
+  pastedTextTransformer = (s) => s,
   renderInput,
   shouldAutoFocus = false,
   inputType = 'text',
@@ -203,7 +206,7 @@ const OTPInput = ({
     onChange(otpValue);
   };
 
-  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>, transformer: (s: string) => string) => {
     event.preventDefault();
 
     const otp = getOTPValue();
@@ -212,6 +215,7 @@ const OTPInput = ({
     // Get pastedData in an array of max size (num of inputs - current position)
     const pastedData = event.clipboardData
       .getData('text/plain')
+      .map()
       .slice(0, numInputs - activeInput)
       .split('');
 
@@ -249,7 +253,7 @@ const OTPInput = ({
               onFocus: (event) => handleFocus(event)(index),
               onBlur: handleBlur,
               onKeyDown: handleKeyDown,
-              onPaste: handlePaste,
+              onPaste: (event) => handlePaste(event, pastedTextTransformer),
               autoComplete: 'off',
               'aria-label': `Please enter OTP character ${index + 1}`,
               style: Object.assign(
